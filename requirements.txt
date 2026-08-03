@@ -1,0 +1,10 @@
+streamlit>=1.48.0
+pandas>=2.2.2
+numpy>=2.0.1
+plotly>=6.0.0
+yfinance>=0.2.65
+requests>=2.32.3
+pytz>=2025.2
+ta>=0.11.0
+scipy>=1.14.1
+python-dateutil>=2.9.0
