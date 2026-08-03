@@ -1,11 +1,13 @@
 import streamlit as st
-import config
-import database
 from datetime import datetime
 
-# -----------------------------------
-# Page Configuration
-# -----------------------------------
+import config
+import database
+import live_data
+
+# ==========================================
+# PAGE CONFIG
+# ==========================================
 
 st.set_page_config(
     page_title=config.APP_NAME,
@@ -13,9 +15,51 @@ st.set_page_config(
     layout="wide"
 )
 
-# -----------------------------------
-# Header
-# -----------------------------------
+# ==========================================
+# LOAD LIVE DATA
+# ==========================================
+
+data = live_data.get_live_price("^NSEBANK")
+
+if data:
+
+    signal = "NO TRADE"
+
+    symbol = "BANKNIFTY"
+
+    entry = data["close"]
+
+    stop_loss = round(entry - 100, 2)
+
+    target1 = round(entry + 200, 2)
+
+    target2 = round(entry + 400, 2)
+
+    confidence = 10
+
+    status = "Scanning Market..."
+
+else:
+
+    signal = "NO TRADE"
+
+    symbol = "BANKNIFTY"
+
+    entry = "--"
+
+    stop_loss = "--"
+
+    target1 = "--"
+
+    target2 = "--"
+
+    confidence = 0
+
+    status = "Market Data Not Available"
+
+# ==========================================
+# HEADER
+# ==========================================
 
 st.title("📈 Institutional Trade Engine")
 
@@ -23,42 +67,25 @@ st.caption("Ultra High Confidence AI Trade Scanner")
 
 st.divider()
 
-# -----------------------------------
-# Dummy Data (Next Step me Live Data aayega)
-# -----------------------------------
-
-signal = "NO TRADE"
-
-symbol = "BANKNIFTY"
-
-entry = "--"
-
-stop_loss = "--"
-
-target1 = "--"
-
-target2 = "--"
-
-confidence = 0
-
-status = "Scanning Market..."
-
-# -----------------------------------
-# Trade Signal
-# -----------------------------------
+# ==========================================
+# SIGNAL
+# ==========================================
 
 if signal == "BUY":
+
     st.success("🟢 BUY")
 
 elif signal == "SELL":
+
     st.error("🔴 SELL")
 
 else:
+
     st.warning("⚪ NO TRADE")
 
-# -----------------------------------
-# Dashboard
-# -----------------------------------
+# ==========================================
+# DASHBOARD
+# ==========================================
 
 col1, col2 = st.columns(2)
 
@@ -80,9 +107,9 @@ with col2:
 
 st.divider()
 
-# -----------------------------------
-# Status
-# -----------------------------------
+# ==========================================
+# TRADE STATUS
+# ==========================================
 
 st.subheader("Trade Status")
 
@@ -90,20 +117,21 @@ st.info(status)
 
 st.divider()
 
-# -----------------------------------
-# Watchlist
-# -----------------------------------
+# ==========================================
+# WATCHLIST
+# ==========================================
 
 st.subheader("Watchlist")
 
 for stock in database.WATCHLIST:
+
     st.write("✅", stock)
 
 st.divider()
 
-# -----------------------------------
-# Last Scan
-# -----------------------------------
+# ==========================================
+# LAST SCAN
+# ==========================================
 
 st.subheader("Last Scan")
 
@@ -111,4 +139,4 @@ st.success(datetime.now().strftime("%d-%m-%Y %H:%M:%S"))
 
 st.divider()
 
-st.caption("Institutional Trade Engine v1.0")
+st.caption("Institutional Trade Engine Version 1.0")
