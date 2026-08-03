@@ -1,6 +1,7 @@
 # ==========================================
 # Institutional Trade Engine
 # File : live_data.py
+# Version : 2.0
 # ==========================================
 
 import yfinance as yf
@@ -10,64 +11,120 @@ def get_live_price(symbol):
 
     try:
 
-        ticker = yf.Ticker(symbol)
-
-        df = ticker.history(
+        df = yf.download(
+            symbol,
             period="1d",
-            interval="1m"
+            interval="5m",
+            progress=False,
+            auto_adjust=False
         )
 
         if df.empty:
             return None
 
+
         last = df.iloc[-1]
+
 
         return {
 
-            "open": round(float(last["Open"]), 2),
+            "open": float(last["Open"]),
 
-            "high": round(float(last["High"]), 2),
+            "high": float(last["High"]),
 
-            "low": round(float(last["Low"]), 2),
+            "low": float(last["Low"]),
 
-            "close": round(float(last["Close"]), 2),
+            "close": float(last["Close"]),
 
-            "volume": int(last["Volume"])
+            "volume": float(last["Volume"])
 
         }
 
+
     except Exception as e:
 
-        print("Live Data Error :", e)
+        print("Live Price Error:", e)
 
         return None
+
+
+
+def get_candles(symbol):
+
+    try:
+
+        df = yf.download(
+
+            symbol,
+
+            period="30d",
+
+            interval="15m",
+
+            progress=False,
+
+            auto_adjust=False
+
+        )
+
+
+        if df.empty:
+
+            return None
+
+
+        return df
+
+
+
+    except Exception as e:
+
+        print("Candle Error:", e)
+
+        return None
+
 
 
 def get_previous_day(symbol):
 
     try:
 
-        ticker = yf.Ticker(symbol)
+        df = yf.download(
 
-        df = ticker.history(period="5d")
+            symbol,
+
+            period="5d",
+
+            interval="1d",
+
+            progress=False,
+
+            auto_adjust=False
+
+        )
+
 
         if len(df) < 2:
+
             return None
+
 
         prev = df.iloc[-2]
 
+
         return {
 
-            "high": round(float(prev["High"]), 2),
+            "high": float(prev["High"]),
 
-            "low": round(float(prev["Low"]), 2),
+            "low": float(prev["Low"]),
 
-            "close": round(float(prev["Close"]), 2)
+            "close": float(prev["Close"])
 
         }
 
+
     except Exception as e:
 
-        print("Previous Day Error :", e)
+        print("Previous Day Error:", e)
 
         return None
