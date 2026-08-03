@@ -1,10 +1,12 @@
 import streamlit as st
 import config
+import database
 from datetime import datetime
 
 # -----------------------------------
-# Page Config
+# Page Configuration
 # -----------------------------------
+
 st.set_page_config(
     page_title=config.APP_NAME,
     page_icon="📈",
@@ -14,30 +16,37 @@ st.set_page_config(
 # -----------------------------------
 # Header
 # -----------------------------------
+
 st.title("📈 Institutional Trade Engine")
 
-st.caption("AI Based High Confidence Trade Scanner")
+st.caption("Ultra High Confidence AI Trade Scanner")
 
 st.divider()
 
 # -----------------------------------
-# Dummy Live Data (abhi testing)
+# Dummy Data (Next Step me Live Data aayega)
 # -----------------------------------
+
 signal = "NO TRADE"
+
 symbol = "BANKNIFTY"
 
 entry = "--"
-sl = "--"
+
+stop_loss = "--"
+
 target1 = "--"
+
 target2 = "--"
 
 confidence = 0
 
-status = "Scanning..."
+status = "Scanning Market..."
 
 # -----------------------------------
-# Signal Box
+# Trade Signal
 # -----------------------------------
+
 if signal == "BUY":
     st.success("🟢 BUY")
 
@@ -48,8 +57,9 @@ else:
     st.warning("⚪ NO TRADE")
 
 # -----------------------------------
-# Main Dashboard
+# Dashboard
 # -----------------------------------
+
 col1, col2 = st.columns(2)
 
 with col1:
@@ -58,7 +68,7 @@ with col1:
 
     st.metric("Entry", entry)
 
-    st.metric("Stop Loss", sl)
+    st.metric("Stop Loss", stop_loss)
 
 with col2:
 
@@ -70,14 +80,35 @@ with col2:
 
 st.divider()
 
-st.write("### Trade Status")
+# -----------------------------------
+# Status
+# -----------------------------------
+
+st.subheader("Trade Status")
 
 st.info(status)
 
 st.divider()
 
-st.write("Last Scan")
+# -----------------------------------
+# Watchlist
+# -----------------------------------
+
+st.subheader("Watchlist")
+
+for stock in database.WATCHLIST:
+    st.write("✅", stock)
+
+st.divider()
+
+# -----------------------------------
+# Last Scan
+# -----------------------------------
+
+st.subheader("Last Scan")
 
 st.success(datetime.now().strftime("%d-%m-%Y %H:%M:%S"))
 
-st.caption("Ultra Trade Engine Version 1.0")
+st.divider()
+
+st.caption("Institutional Trade Engine v1.0")
