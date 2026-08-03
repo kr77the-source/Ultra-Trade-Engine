@@ -1,106 +1,286 @@
 # ==========================================
 # Institutional Trade Engine
 # File : app.py
-# Version : 2.0
+# Version : 4.0
 # ==========================================
 
 import streamlit as st
-from datetime import datetime
-
-import config
 import scanner
+import time
 
-# ------------------------------------------
-# PAGE CONFIG
-# ------------------------------------------
+
+# -----------------------------
+# Page Config
+# -----------------------------
 
 st.set_page_config(
-    page_title=config.APP_NAME,
+
+    page_title="Institutional Trade Engine",
+
     page_icon="📈",
+
     layout="wide"
+
 )
 
-# ------------------------------------------
-# LOAD BEST TRADE
-# ------------------------------------------
 
-trade = scanner.get_best_trade()
+# -----------------------------
+# Title
+# -----------------------------
 
-if trade:
+st.title(
+    "📈 Institutional AI Trade Engine"
+)
 
-    signal = trade["signal"]
-    symbol = trade["symbol"]
-    entry = trade["price"]
-    stop_loss = round(entry * 0.998, 2)
-    target1 = round(entry * 1.004, 2)
-    target2 = round(entry * 1.008, 2)
-    confidence = trade["confidence"]
-    status = "Market Scanned Successfully"
+
+st.caption(
+    "Multi Strategy + Smart Money + Global Market Scanner"
+)
+
+
+
+# -----------------------------
+# Refresh Button
+# -----------------------------
+
+if st.button("🔄 Scan Market"):
+
+    with st.spinner(
+        "Scanning Market..."
+    ):
+
+        trade = scanner.get_best_trade()
+
+
+        st.session_state["trade"] = trade
+
+
+
+# -----------------------------
+# Display Result
+# -----------------------------
+
+
+if "trade" in st.session_state:
+
+
+    trade = st.session_state["trade"]
+
+
+    if trade is None:
+
+
+        st.warning(
+            "No High Confidence Trade Found"
+        )
+
+
+    else:
+
+
+        signal = trade["signal"]
+
+
+        confidence = trade["confidence"]
+
+
+
+        # Signal Box
+
+        if signal == "BUY":
+
+            st.success(
+                f"🟢 BUY SIGNAL\n\nConfidence : {confidence}%"
+            )
+
+
+        elif signal == "SELL":
+
+            st.error(
+                f"🔴 SELL SIGNAL\n\nConfidence : {confidence}%"
+            )
+
+
+        else:
+
+            st.info(
+                "⚪ NO TRADE"
+            )
+
+
+
+        st.divider()
+
+
+        # Details
+
+        col1,col2,col3 = st.columns(3)
+
+
+        with col1:
+
+            st.metric(
+
+                "Symbol",
+
+                trade["symbol"]
+
+            )
+
+
+        with col2:
+
+            st.metric(
+
+                "Confidence",
+
+                f"{confidence}%"
+
+            )
+
+
+        with col3:
+
+            st.metric(
+
+                "Signal",
+
+                signal
+
+            )
+
+
+
+        st.divider()
+
+
+
+        # Trade Setup
+
+        setup = trade.get(
+            "setup"
+        )
+
+
+        if setup:
+
+
+            st.subheader(
+                "Trade Levels"
+            )
+
+
+            c1,c2,c3,c4 = st.columns(4)
+
+
+            with c1:
+
+                st.metric(
+
+                    "Entry",
+
+                    setup.get(
+                        "entry"
+                    )
+
+                )
+
+
+            with c2:
+
+                st.metric(
+
+                    "Stop Loss",
+
+                    setup.get(
+                        "stop_loss"
+                    )
+
+                )
+
+
+            with c3:
+
+                st.metric(
+
+                    "Target 1",
+
+                    setup.get(
+                        "target_1"
+                    )
+
+                )
+
+
+            with c4:
+
+                st.metric(
+
+                    "Target 2",
+
+                    setup.get(
+                        "target_2"
+                    )
+
+                )
+
+
+
+            st.write(
+
+                "Quantity:",
+
+                setup.get(
+                    "quantity"
+                )
+
+            )
+
+
+
+        st.divider()
+
+
+
+        # Reasons
+
+        st.subheader(
+            "Confirmation"
+        )
+
+
+        for reason in trade["reasons"]:
+
+            st.write(
+                "✅",
+                reason
+            )
+
+
 
 else:
 
-    signal = "NO TRADE"
-    symbol = "--"
-    entry = "--"
-    stop_loss = "--"
-    target1 = "--"
-    target2 = "--"
-    confidence = 0
-    status = "No Data"
 
-# ------------------------------------------
-# HEADER
-# ------------------------------------------
+    st.info(
+        "Click Scan Market to find setup"
+    )
 
-st.title("📈 Institutional Trade Engine")
 
-st.caption("Ultra High Confidence Trade Scanner")
 
-st.divider()
+# Auto refresh option
 
-# ------------------------------------------
-# SIGNAL
-# ------------------------------------------
+st.sidebar.title(
+    "Settings"
+)
 
-if signal == "BUY":
-    st.success("🟢 BUY")
 
-elif signal == "SELL":
-    st.error("🔴 SELL")
+auto = st.sidebar.checkbox(
+    "Auto Refresh"
+)
 
-else:
-    st.warning("⚪ NO TRADE")
 
-# ------------------------------------------
-# DASHBOARD
-# ------------------------------------------
+if auto:
 
-col1, col2 = st.columns(2)
+    time.sleep(60)
 
-with col1:
-
-    st.metric("Symbol", symbol)
-    st.metric("Entry", entry)
-    st.metric("Stop Loss", stop_loss)
-
-with col2:
-
-    st.metric("Target 1", target1)
-    st.metric("Target 2", target2)
-    st.metric("Confidence", f"{confidence}%")
-
-st.divider()
-
-st.subheader("Trade Status")
-
-st.info(status)
-
-st.divider()
-
-st.subheader("Last Scan")
-
-st.success(datetime.now().strftime("%d-%m-%Y %H:%M:%S"))
-
-st.divider()
-
-st.caption("Version 2.0")
+    st.rerun()
