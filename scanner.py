@@ -1,120 +1,145 @@
 # ==========================================
 # Institutional Trade Engine
 # File : scanner.py
-# Version : 2.0
+# Version : 3.0
 # ==========================================
 
 import database
 import live_data
-import strategy_pdh
-import yfinance as yf
 
+import global_market
+import sector_strength
+import market_breadth
+import option_chain
+import news_filter
 
-def get_last_two_candles(symbol):
-
-    try:
-
-        df = yf.download(
-            symbol,
-            period="2d",
-            interval="5m",
-            progress=False,
-            auto_adjust=False
-        )
-
-        if len(df) < 3:
-            return None, None
-
-        previous = df.iloc[-2]
-
-        current = df.iloc[-1]
-
-        prev = {
-
-            "open": float(previous["Open"]),
-            "high": float(previous["High"]),
-            "low": float(previous["Low"]),
-            "close": float(previous["Close"]),
-            "volume": float(previous["Volume"])
-
-        }
-
-        curr = {
-
-            "open": float(current["Open"]),
-            "high": float(current["High"]),
-            "low": float(current["Low"]),
-            "close": float(current["Close"]),
-            "volume": float(current["Volume"])
-
-        }
-
-        return prev, curr
-
-    except Exception as e:
-
-        print(e)
-
-        return None, None
+import trade_filter
 
 
 def scan_market():
 
     trades = []
 
-    for name, info in database.WATCHLIST.items():
+    # --------------------------------------
+    # Global Filters
+    # --------------------------------------
+
+    global_result = global_market.get_market_sentiment()
+
+    sector_result = sector_strength.get_sector_strength()
+
+    breadth_result = market_breadth.get_market_breadth()
+
+    news_result = news_filter.check_news("")
+
+    # --------------------------------------
+    # Scan Symbols
+    # --------------------------------------
+
+    for symbol, info in database.WATCHLIST.items():
 
         try:
 
             live = live_data.get_live_price(info["ticker"])
 
-            prev_day = live_data.get_previous_day(info["ticker"])
-
-            previous, current = get_last_two_candles(info["ticker"])
-
-            if (
-                live is None
-                or prev_day is None
-                or previous is None
-                or current is None
-            ):
+            if live is None:
                 continue
 
-            result = strategy_pdh.pdh_strategy(
-                current,
-                previous,
-                prev_day
+            # --------------------------------------
+            # Temporary Strategy
+            # (Next Version will use PDH + ORB + EMA)
+            # --------------------------------------
+
+            strategy_signal = "NO TRADE"
+            strategy_confidence = 60
+
+            # Bullish Example
+            if live["close"] > live["open"]:
+
+                strategy_signal = "BUY"
+
+                strategy_confidence = 80
+
+            # Bearish Example
+            elif live["close"] < live["open"]:
+
+                strategy_signal = "SELL"
+
+                strategy_confidence = 80
+
+            # --------------------------------------
+            # Temporary Option Chain
+            # --------------------------------------
+
+            option_result = option_chain.option_chain_signal(
+
+                call_oi=100000,
+
+                put_oi=130000,
+
+                call_change=5000,
+
+                put_change=12000
+
+            )
+
+            # --------------------------------------
+            # Final Validation
+            # --------------------------------------
+
+            final = trade_filter.validate_trade(
+
+                strategy_signal,
+
+                strategy_confidence,
+
+                global_result["signal"],
+
+                sector_result["signal"],
+
+                breadth_result["signal"],
+
+                option_result["signal"],
+
+                news_result["allow_trade"]
+
             )
 
             trades.append({
 
-                "symbol": name,
+                "symbol": symbol,
 
                 "price": live["close"],
 
-                "signal": result["signal"],
+                "signal": final["signal"],
 
-                "confidence": result["confidence"]
+                "confidence": final["confidence"],
+
+                "reasons": final["reasons"]
 
             })
 
         except Exception as e:
 
-            print(name, e)
+            print(symbol, e)
 
     return trades
 
 
 def get_best_trade():
 
-    market = scan_market()
+    trades = scan_market()
 
-    if len(market) == 0:
+    if len(trades) == 0:
+
         return None
 
-    market.sort(
+    trades.sort(
+
         key=lambda x: x["confidence"],
+
         reverse=True
+
     )
 
-    return market[0]
+    return trades[0]
