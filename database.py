@@ -3,58 +3,63 @@
 # database.py
 # ==========================================
 
-# Major Indices
-INDEX_DB = {
+WATCHLIST = {
+
     "NIFTY": {
-        "symbol": "^NSEI",
-        "exchange": "NSE",
+        "ticker": "^NSEI",
         "type": "INDEX",
         "strike_step": 50,
         "lot_size": 25
     },
 
     "BANKNIFTY": {
-        "symbol": "^NSEBANK",
-        "exchange": "NSE",
+        "ticker": "^NSEBANK",
         "type": "INDEX",
         "strike_step": 100,
         "lot_size": 15
     },
 
     "FINNIFTY": {
-        "symbol": "NIFTY_FIN_SERVICE.NS",
-        "exchange": "NSE",
+        "ticker": "NIFTY_FIN_SERVICE.NS",
         "type": "INDEX",
         "strike_step": 50,
         "lot_size": 40
-    }
-}
-
-# Sample F&O Stocks
-STOCK_DB = {
+    },
 
     "RELIANCE": {
-        "symbol": "RELIANCE.NS",
-        "sector": "Energy",
-        "lot_size": 250
+        "ticker": "RELIANCE.NS",
+        "type": "STOCK",
+        "sector": "Energy"
     },
 
     "HDFCBANK": {
-        "symbol": "HDFCBANK.NS",
-        "sector": "Bank",
-        "lot_size": 550
+        "ticker": "HDFCBANK.NS",
+        "type": "STOCK",
+        "sector": "Bank"
     },
 
     "ICICIBANK": {
-        "symbol": "ICICIBANK.NS",
-        "sector": "Bank",
-        "lot_size": 700
+        "ticker": "ICICIBANK.NS",
+        "type": "STOCK",
+        "sector": "Bank"
     },
 
     "SBIN": {
-        "symbol": "SBIN.NS",
-        "sector": "Bank",
-        "lot_size": 750
+        "ticker": "SBIN.NS",
+        "type": "STOCK",
+        "sector": "Bank"
+    },
+
+    "INFY": {
+        "ticker": "INFY.NS",
+        "type": "STOCK",
+        "sector": "IT"
+    },
+
+    "TCS": {
+        "ticker": "TCS.NS",
+        "type": "STOCK",
+        "sector": "IT"
     }
 
 }
