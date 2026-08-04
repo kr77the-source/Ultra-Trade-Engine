@@ -1,34 +1,155 @@
-# ==========================
+# ==========================================
 # Institutional Trade Engine
-# config.py
-# ==========================
+# File : config.py
+# Version : 5.0
+# ==========================================
 
-APP_NAME = "Institutional Trade Engine"
+from datetime import time
 
-MARKET_START = "09:15"
-MARKET_SCAN_START = "09:30"
-MARKET_CLOSE = "15:30"
+# ==========================================
+# APP
+# ==========================================
 
-TIMEFRAME = "5m"
+APP_NAME = "Institutional AI Trade Engine"
 
-SCAN_INTERVAL = 60
+VERSION = "5.0"
 
-CONFIDENCE_SCORE = 95
+AUTO_REFRESH_SECONDS = 60
 
-RISK_REWARD = 2.0
+# ==========================================
+# CAPITAL
+# ==========================================
 
-MAX_TRADES_PER_DAY = 1
+DEFAULT_CAPITAL = 500000
 
-CAPITAL = 100000
+RISK_PERCENT = 1.0
 
-RISK_PER_TRADE = 1.0
+MAX_OPEN_TRADES = 1
 
-USE_GLOBAL_MARKET = True
-USE_OPTION_CHAIN = True
-USE_FII_DII = True
-USE_SECTOR = True
-USE_VOLUME = True
-USE_SMART_MONEY = True
-USE_BREADTH = True
+MIN_CONFIDENCE = 85
 
-LOG_LEVEL = "INFO"
+# ==========================================
+# MARKET TIMINGS (IST)
+# ==========================================
+
+MARKET_OPEN = time(9, 15)
+
+NO_TRADE_BEFORE = time(9, 30)
+
+LAST_ENTRY = time(14, 45)
+
+SQUARE_OFF = time(15, 20)
+
+# ==========================================
+# DATA
+# ==========================================
+
+DEFAULT_INTERVAL = "15m"
+
+DEFAULT_PERIOD = "30d"
+
+ENTRY_INTERVAL = "5m"
+
+TREND_INTERVAL = "1h"
+
+# ==========================================
+# STRATEGY WEIGHTS
+# ==========================================
+
+WEIGHTS = {
+
+    "PDH":10,
+
+    "ORB":8,
+
+    "VWAP":8,
+
+    "EMA":8,
+
+    "CPR":6,
+
+    "SUPERTREND":8,
+
+    "ATR":5,
+
+    "SMART_MONEY":10,
+
+    "ORDER_BLOCK":8,
+
+    "LIQUIDITY":8,
+
+    "MARKET_STRUCTURE":8,
+
+    "MULTI_TIMEFRAME":10,
+
+    "OPTION_CHAIN":5,
+
+    "GLOBAL":5,
+
+    "SECTOR":5,
+
+    "BREADTH":5
+
+}
+
+# ==========================================
+# ATR
+# ==========================================
+
+ATR_PERIOD = 14
+
+ATR_SL = 1.5
+
+ATR_TARGET1 = 2.0
+
+ATR_TARGET2 = 3.0
+
+# ==========================================
+# EMA
+# ==========================================
+
+FAST_EMA = 20
+
+SLOW_EMA = 50
+
+# ==========================================
+# VWAP
+# ==========================================
+
+USE_VWAP = True
+
+# ==========================================
+# CPR
+# ==========================================
+
+USE_CPR = True
+
+# ==========================================
+# OPTION CHAIN
+# ==========================================
+
+MIN_PCR = 0.80
+
+MAX_PCR = 1.30
+
+# ==========================================
+# VOLUME
+# ==========================================
+
+MIN_VOLUME_RATIO = 2.0
+
+# ==========================================
+# BACKTEST
+# ==========================================
+
+BROKERAGE = 40
+
+SLIPPAGE = 0.0005
+
+STT = 0.00025
+
+# ==========================================
+# LOGGING
+# ==========================================
+
+DEBUG = True
