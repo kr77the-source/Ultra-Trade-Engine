@@ -1,110 +1,105 @@
 # ==========================================
 # Institutional Trade Engine
 # File : trade_filter.py
-# Version : 1.0
+# Version : 6.0
 # ==========================================
 
+from datetime import datetime
+from config import (
+    MARKET_OPEN,
+    NO_TRADE_BEFORE,
+    LAST_ENTRY,
+    MIN_CONFIDENCE
+)
 
-def validate_trade(
-    strategy_signal,
-    strategy_confidence,
-    global_signal,
-    sector_signal,
-    breadth_signal,
-    option_signal,
-    news_allowed
-):
 
-    reasons = []
+class TradeFilter:
 
-    score = strategy_confidence
+    def __init__(self):
+        pass
 
     # -----------------------------
-    # News Filter
+    # Market Timing Filter
     # -----------------------------
-    if not news_allowed:
+    def check_market_time(self):
+
+        now = datetime.now().time()
+
+        if now < NO_TRADE_BEFORE:
+            return False, "Waiting for first 3 candles"
+
+        if now > LAST_ENTRY:
+            return False, "No new entries after cutoff"
+
+        return True, "Market timing OK"
+
+    # -----------------------------
+    # Confidence Filter
+    # -----------------------------
+    def check_confidence(self, confidence):
+
+        if confidence < MIN_CONFIDENCE:
+            return False, "Confidence below threshold"
+
+        return True, "Confidence OK"
+
+    # -----------------------------
+    # Risk Reward Filter
+    # -----------------------------
+    def check_rr(self, rr):
+
+        if rr < 2.0:
+            return False, "Risk Reward less than 1:2"
+
+        return True, "Risk Reward OK"
+
+    # -----------------------------
+    # Volume Filter
+    # -----------------------------
+    def check_volume(self, current_volume, average_volume):
+
+        if average_volume <= 0:
+            return False, "Invalid average volume"
+
+        ratio = current_volume / average_volume
+
+        if ratio < 1.5:
+            return False, "Low volume"
+
+        return True, "Volume confirmed"
+
+    # -----------------------------
+    # Final Filter
+    # -----------------------------
+    def approve_trade(
+        self,
+        confidence,
+        rr,
+        current_volume,
+        average_volume
+    ):
+
+        checks = []
+
+        checks.append(self.check_market_time())
+        checks.append(self.check_confidence(confidence))
+        checks.append(self.check_rr(rr))
+        checks.append(
+            self.check_volume(
+                current_volume,
+                average_volume
+            )
+        )
+
+        failed = [msg for ok, msg in checks if not ok]
+
+        if failed:
+            return {
+                "approved": False,
+                "reason": " | ".join(failed)
+            }
 
         return {
-
-            "allow": False,
-
-            "signal": "NO TRADE",
-
-            "confidence": 0,
-
-            "reasons": ["High Impact News"]
-
+            "approved": True,
+            "reason": "All filters passed"
         }
-
-    # -----------------------------
-    # Global Market
-    # -----------------------------
-    if global_signal == strategy_signal:
-
-        score += 10
-        reasons.append("Global Market Confirmed")
-
-    else:
-
-        score -= 10
-
-    # -----------------------------
-    # Sector Strength
-    # -----------------------------
-    if sector_signal == strategy_signal:
-
-        score += 10
-        reasons.append("Sector Strong")
-
-    else:
-
-        score -= 10
-
-    # -----------------------------
-    # Market Breadth
-    # -----------------------------
-    if breadth_signal == strategy_signal:
-
-        score += 10
-        reasons.append("Market Breadth Positive")
-
-    else:
-
-        score -= 10
-
-    # -----------------------------
-    # Option Chain
-    # -----------------------------
-    if option_signal == strategy_signal:
-
-        score += 15
-        reasons.append("Option Chain Confirmed")
-
-    else:
-
-        score -= 15
-
-    # -----------------------------
-    # Final Decision
-    # -----------------------------
-    if score >= 95:
-
-        allow = True
-
-    else:
-
-        allow = False
-
-        strategy_signal = "NO TRADE"
-
-    return {
-
-        "allow": allow,
-
-        "signal": strategy_signal,
-
-        "confidence": max(0, min(score, 100)),
-
-        "reasons": reasons
-
-    }
