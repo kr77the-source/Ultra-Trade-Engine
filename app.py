@@ -1,21 +1,23 @@
 # ==========================================
 # Institutional Trade Engine
 # File : app.py
-# Version : 4.0
+# Version : 6.0 Final
 # ==========================================
 
 import streamlit as st
-import scanner
 import time
 
+from engine import TradeEngine
+from dashboard import Dashboard
+from performance import get_statistics
 
-# -----------------------------
-# Page Config
-# -----------------------------
+# ------------------------------------------
+# PAGE CONFIG
+# ------------------------------------------
 
 st.set_page_config(
 
-    page_title="Institutional Trade Engine",
+    page_title="Institutional AI Trade Engine",
 
     page_icon="📈",
 
@@ -23,264 +25,134 @@ st.set_page_config(
 
 )
 
+# ------------------------------------------
+# OBJECTS
+# ------------------------------------------
 
-# -----------------------------
-# Title
-# -----------------------------
+engine = TradeEngine()
 
-st.title(
-    "📈 Institutional AI Trade Engine"
-)
+ui = Dashboard()
 
+# ------------------------------------------
+# HEADER
+# ------------------------------------------
+
+st.title("📈 Institutional AI Trade Engine")
 
 st.caption(
-    "Multi Strategy + Smart Money + Global Market Scanner"
+    "Professional Intraday Trading Dashboard"
 )
 
+# ------------------------------------------
+# SIDEBAR
+# ------------------------------------------
 
+st.sidebar.header("Controls")
 
-# -----------------------------
-# Refresh Button
-# -----------------------------
+refresh = st.sidebar.slider(
 
-if st.button("🔄 Scan Market"):
+    "Auto Refresh (Seconds)",
 
-    with st.spinner(
-        "Scanning Market..."
-    ):
+    10,
 
-        trade = scanner.get_best_trade()
+    300,
 
+    60
 
-        st.session_state["trade"] = trade
+)
 
+capital = st.sidebar.number_input(
 
+    "Capital",
 
-# -----------------------------
-# Display Result
-# -----------------------------
+    value=500000
 
+)
 
-if "trade" in st.session_state:
+scan = st.sidebar.button(
 
+    "🔍 Scan Market"
 
-    trade = st.session_state["trade"]
+)
 
+# ------------------------------------------
+# SCAN
+# ------------------------------------------
 
-    if trade is None:
+if scan:
 
+    with st.spinner("Scanning Market..."):
 
-        st.warning(
-            "No High Confidence Trade Found"
+        result = engine.run()
+
+        st.session_state["result"] = result
+
+# ------------------------------------------
+# DISPLAY
+# ------------------------------------------
+
+if "result" in st.session_state:
+
+    result = st.session_state["result"]
+
+    if result["status"] == "TRADE APPROVED":
+
+        trade = result["trade"]
+
+        ui.show_market_status(
+
+            "Bullish"
+
+            if trade["signal"] == "BUY"
+
+            else "Bearish",
+
+            "Positive",
+
+            "Normal"
+
         )
 
+        ui.show_trade(trade)
 
     else:
 
+        ui.show_no_trade(
 
-        signal = trade["signal"]
+            result["reason"]
 
-
-        confidence = trade["confidence"]
-
-
-
-        # Signal Box
-
-        if signal == "BUY":
-
-            st.success(
-                f"🟢 BUY SIGNAL\n\nConfidence : {confidence}%"
-            )
-
-
-        elif signal == "SELL":
-
-            st.error(
-                f"🔴 SELL SIGNAL\n\nConfidence : {confidence}%"
-            )
-
-
-        else:
-
-            st.info(
-                "⚪ NO TRADE"
-            )
-
-
-
-        st.divider()
-
-
-        # Details
-
-        col1,col2,col3 = st.columns(3)
-
-
-        with col1:
-
-            st.metric(
-
-                "Symbol",
-
-                trade["symbol"]
-
-            )
-
-
-        with col2:
-
-            st.metric(
-
-                "Confidence",
-
-                f"{confidence}%"
-
-            )
-
-
-        with col3:
-
-            st.metric(
-
-                "Signal",
-
-                signal
-
-            )
-
-
-
-        st.divider()
-
-
-
-        # Trade Setup
-
-        setup = trade.get(
-            "setup"
         )
 
+# ------------------------------------------
+# PERFORMANCE
+# ------------------------------------------
 
-        if setup:
+stats = get_statistics()
 
+ui.show_performance(stats)
 
-            st.subheader(
-                "Trade Levels"
-            )
+# ------------------------------------------
+# FOOTER
+# ------------------------------------------
 
+st.divider()
 
-            c1,c2,c3,c4 = st.columns(4)
+st.caption(
 
+    "Institutional AI Engine Version 6"
 
-            with c1:
-
-                st.metric(
-
-                    "Entry",
-
-                    setup.get(
-                        "entry"
-                    )
-
-                )
-
-
-            with c2:
-
-                st.metric(
-
-                    "Stop Loss",
-
-                    setup.get(
-                        "stop_loss"
-                    )
-
-                )
-
-
-            with c3:
-
-                st.metric(
-
-                    "Target 1",
-
-                    setup.get(
-                        "target_1"
-                    )
-
-                )
-
-
-            with c4:
-
-                st.metric(
-
-                    "Target 2",
-
-                    setup.get(
-                        "target_2"
-                    )
-
-                )
-
-
-
-            st.write(
-
-                "Quantity:",
-
-                setup.get(
-                    "quantity"
-                )
-
-            )
-
-
-
-        st.divider()
-
-
-
-        # Reasons
-
-        st.subheader(
-            "Confirmation"
-        )
-
-
-        for reason in trade["reasons"]:
-
-            st.write(
-                "✅",
-                reason
-            )
-
-
-
-else:
-
-
-    st.info(
-        "Click Scan Market to find setup"
-    )
-
-
-
-# Auto refresh option
-
-st.sidebar.title(
-    "Settings"
 )
 
+# ------------------------------------------
+# AUTO REFRESH
+# ------------------------------------------
 
-auto = st.sidebar.checkbox(
-    "Auto Refresh"
-)
+if st.sidebar.checkbox(
 
+    "Enable Auto Refresh"
 
-if auto:
+):
 
-    time.sleep(60)
+    time.sleep(refresh)
 
     st.rerun()
