@@ -1,13 +1,14 @@
 # ==========================================
 # Institutional Trade Engine
 # File : performance.py
-# Version : 6.0
+# Version : 7.0
 # ==========================================
 
 import os
 import pandas as pd
 
-LOG_FILE = "logs/trade_log.csv"
+LOG_DIR = "logs"
+LOG_FILE = os.path.join(LOG_DIR, "trade_log.csv")
 
 
 # ------------------------------------------
@@ -16,12 +17,26 @@ LOG_FILE = "logs/trade_log.csv"
 
 def load_history():
 
+    # Create logs folder automatically
+    os.makedirs(LOG_DIR, exist_ok=True)
+
+    # If log file doesn't exist
     if not os.path.exists(LOG_FILE):
         return pd.DataFrame()
 
     try:
-        return pd.read_csv(LOG_FILE)
-    except Exception:
+
+        df = pd.read_csv(LOG_FILE)
+
+        if df is None:
+            return pd.DataFrame()
+
+        return df
+
+    except Exception as e:
+
+        print(f"Performance Load Error : {e}")
+
         return pd.DataFrame()
 
 
@@ -36,12 +51,12 @@ def empty_statistics():
         "total_trades": 0,
         "wins": 0,
         "losses": 0,
-        "win_rate": 0,
-        "loss_rate": 0,
-        "total_pnl": 0,
-        "average_pnl": 0,
-        "profit_factor": 0,
-        "max_drawdown": 0
+        "win_rate": 0.0,
+        "loss_rate": 0.0,
+        "total_pnl": 0.0,
+        "average_pnl": 0.0,
+        "profit_factor": 0.0,
+        "max_drawdown": 0.0
 
     }
 
@@ -57,9 +72,15 @@ def get_statistics():
     if df.empty:
         return empty_statistics()
 
-    required = ["Status", "PnL"]
+    required_columns = [
 
-    for col in required:
+        "Status",
+        "PnL"
+
+    ]
+
+    for col in required_columns:
+
         if col not in df.columns:
             return empty_statistics()
 
@@ -69,29 +90,44 @@ def get_statistics():
         return empty_statistics()
 
     wins = closed[closed["PnL"] > 0]
+
     losses = closed[closed["PnL"] < 0]
 
     total = len(closed)
 
-    total_pnl = closed["PnL"].sum()
+    total_pnl = float(closed["PnL"].sum())
 
-    average = closed["PnL"].mean()
+    average_pnl = float(closed["PnL"].mean())
 
-    gross_profit = wins["PnL"].sum()
+    gross_profit = float(wins["PnL"].sum())
 
-    gross_loss = abs(losses["PnL"].sum())
+    gross_loss = abs(float(losses["PnL"].sum()))
 
-    profit_factor = (
-        round(gross_profit / gross_loss, 2)
-        if gross_loss > 0
-        else round(gross_profit, 2)
-    )
+    if gross_loss == 0:
+
+        profit_factor = round(gross_profit, 2)
+
+    else:
+
+        profit_factor = round(
+
+            gross_profit / gross_loss,
+
+            2
+
+        )
 
     equity = closed["PnL"].cumsum()
 
     drawdown = equity - equity.cummax()
 
-    max_dd = round(drawdown.min(), 2)
+    max_drawdown = round(
+
+        drawdown.min(),
+
+        2
+
+    )
 
     return {
 
@@ -101,17 +137,41 @@ def get_statistics():
 
         "losses": len(losses),
 
-        "win_rate": round(len(wins) * 100 / total, 2),
+        "win_rate": round(
 
-        "loss_rate": round(len(losses) * 100 / total, 2),
+            len(wins) * 100 / total,
 
-        "total_pnl": round(total_pnl, 2),
+            2
 
-        "average_pnl": round(average, 2),
+        ),
+
+        "loss_rate": round(
+
+            len(losses) * 100 / total,
+
+            2
+
+        ),
+
+        "total_pnl": round(
+
+            total_pnl,
+
+            2
+
+        ),
+
+        "average_pnl": round(
+
+            average_pnl,
+
+            2
+
+        ),
 
         "profit_factor": profit_factor,
 
-        "max_drawdown": max_dd
+        "max_drawdown": max_drawdown
 
     }
 
@@ -127,22 +187,39 @@ def monthly_report():
     if df.empty:
         return pd.DataFrame()
 
-    if "Date" not in df.columns or "PnL" not in df.columns:
+    if "Date" not in df.columns:
+
+        return pd.DataFrame()
+
+    if "PnL" not in df.columns:
+
         return pd.DataFrame()
 
     df["Date"] = pd.to_datetime(
+
         df["Date"],
+
         errors="coerce"
+
     )
 
-    df = df.dropna(subset=["Date"])
+    df = df.dropna(
+
+        subset=["Date"]
+
+    )
 
     if df.empty:
+
         return pd.DataFrame()
 
-    df["Month"] = df["Date"].dt.strftime("%Y-%m")
+    df["Month"] = df["Date"].dt.strftime(
 
-    return (
+        "%Y-%m"
+
+    )
+
+    report = (
 
         df.groupby("Month")["PnL"]
 
@@ -151,3 +228,31 @@ def monthly_report():
         .reset_index()
 
     )
+
+    return report
+
+
+# ------------------------------------------
+# Performance Summary
+# ------------------------------------------
+
+def performance_summary():
+
+    stats = get_statistics()
+
+    print("\n========== PERFORMANCE ==========")
+
+    for k, v in stats.items():
+
+        print(f"{k:20}: {v}")
+
+    print("=================================\n")
+
+
+# ------------------------------------------
+# Test
+# ------------------------------------------
+
+if __name__ == "__main__":
+
+    performance_summary()
