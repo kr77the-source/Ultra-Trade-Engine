@@ -1,7 +1,7 @@
 # ==========================================
 # Institutional Trade Engine
 # File : dashboard.py
-# Version : 6.0
+# Version : 7.0
 # ==========================================
 
 import streamlit as st
@@ -12,16 +12,16 @@ class Dashboard:
     def __init__(self):
         pass
 
+
+    # ---------------------------------------
+    # Market Status
+    # ---------------------------------------
+
     def show_market_status(
-
         self,
-
         market_bias,
-
         global_sentiment,
-
         india_vix
-
     ):
 
         st.subheader("Market Overview")
@@ -36,7 +36,7 @@ class Dashboard:
 
         with c2:
             st.metric(
-                "Global",
+                "Global Sentiment",
                 global_sentiment
             )
 
@@ -47,9 +47,13 @@ class Dashboard:
             )
 
 
+    # ---------------------------------------
+    # Trade Display
+    # ---------------------------------------
+
     def show_trade(self, trade):
 
-        if trade is None:
+        if not trade:
 
             st.warning(
                 "No Trade Available"
@@ -58,168 +62,216 @@ class Dashboard:
             return
 
 
-        setup = trade["setup"]
+        symbol = trade.get(
+            "symbol",
+            "UNKNOWN"
+        )
+
+        signal = trade.get(
+            "signal",
+            "WAIT"
+        )
+
+
+        confidence = trade.get(
+            "confidence",
+            0
+        )
 
 
         st.header(
-
-            f"{trade['signal']} : {trade['symbol']}"
-
+            f"{signal} : {symbol}"
         )
 
 
         st.success(
+            f"Confidence : {confidence}%"
+        )
 
-            f"Confidence : {trade['confidence']}%"
 
+        setup = trade.get(
+            "setup",
+            {}
         )
 
 
         c1, c2, c3 = st.columns(3)
 
+
         with c1:
 
             st.metric(
-
                 "Entry",
-
-                setup["entry"]
-
+                setup.get(
+                    "entry",
+                    "-"
+                )
             )
+
 
         with c2:
 
             st.metric(
-
                 "Stop Loss",
-
-                setup["stop_loss"]
-
+                setup.get(
+                    "stop_loss",
+                    "-"
+                )
             )
+
 
         with c3:
 
             st.metric(
-
                 "Quantity",
-
-                setup["quantity"]
-
+                setup.get(
+                    "quantity",
+                    "-"
+                )
             )
 
 
         c4, c5 = st.columns(2)
 
+
         with c4:
 
             st.metric(
-
                 "Target 1",
-
-                setup["target_1"]
-
+                setup.get(
+                    "target_1",
+                    "-"
+                )
             )
+
 
         with c5:
 
             st.metric(
-
                 "Target 2",
-
-                setup["target_2"]
-
+                setup.get(
+                    "target_2",
+                    "-"
+                )
             )
 
 
         st.metric(
-
             "Risk Reward",
-
-            setup["risk_reward"]
-
+            setup.get(
+                "risk_reward",
+                "-"
+            )
         )
 
 
-        st.subheader("Trade Confirmation")
+        st.subheader(
+            "Trade Confirmation"
+        )
 
 
-        for reason in trade["reasons"]:
+        reasons = trade.get(
+            "reasons",
+            []
+        )
+
+
+        if reasons:
+
+            for reason in reasons:
+
+                st.write(
+                    "✅",
+                    reason
+                )
+
+        else:
 
             st.write(
-
-                "✅",
-
-                reason
-
+                "No confirmation details available"
             )
 
 
-    def show_no_trade(self, reason):
+    # ---------------------------------------
+    # No Trade
+    # ---------------------------------------
+
+    def show_no_trade(
+        self,
+        reason
+    ):
 
         st.error(
-
             "NO TRADE"
-
         )
 
         st.write(
-
             reason
-
         )
 
 
-    def show_performance(self, stats):
+    # ---------------------------------------
+    # Performance
+    # ---------------------------------------
+
+    def show_performance(
+        self,
+        stats
+    ):
 
         st.subheader(
-
             "Performance"
-
         )
 
 
-        a, b, c, d = st.columns(4)
+        if not stats:
+
+            st.info(
+                "No performance data"
+            )
+
+            return
 
 
-        with a:
+        c1, c2, c3, c4 = st.columns(4)
+
+
+        with c1:
 
             st.metric(
-
                 "Trades",
-
-                stats["total_trades"]
-
+                stats.get(
+                    "total_trades",
+                    0
+                )
             )
 
 
-        with b:
+        with c2:
 
             st.metric(
-
                 "Win Rate",
-
-                f"{stats['win_rate']}%"
-
+                f"{stats.get('win_rate',0)}%"
             )
 
 
-        with c:
+        with c3:
 
             st.metric(
-
                 "Profit Factor",
-
-                stats["profit_factor"]
-
+                stats.get(
+                    "profit_factor",
+                    0
+                )
             )
 
 
-        with d:
+        with c4:
 
             st.metric(
-
                 "PnL",
-
-                stats["total_pnl"]
-
+                stats.get(
+                    "total_pnl",
+                    0
+                )
             )
