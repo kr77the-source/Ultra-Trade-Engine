@@ -1,74 +1,154 @@
 # ==========================================
 # Institutional Trade Engine
 # File : risk_manager.py
-# Version : 1.0
+# Version : 5.0
 # ==========================================
 
-def calculate_trade(
-    capital,
-    entry,
-    stop_loss,
-    risk_percent=1.0,
-    reward_ratio=2.0
-):
+import math
 
-    try:
 
-        capital = float(capital)
-        entry = float(entry)
-        stop_loss = float(stop_loss)
+class RiskManager:
 
-        risk_amount = capital * (risk_percent / 100)
+    def __init__(
 
-        risk_per_share = abs(entry - stop_loss)
+        self,
 
-        if risk_per_share <= 0:
+        capital,
 
-            return None
+        risk_percent=1
 
-        quantity = int(risk_amount / risk_per_share)
+    ):
 
-        target = round(
-            entry + ((entry - stop_loss) * reward_ratio),
-            2
+        self.capital = capital
+
+        self.risk_percent = risk_percent
+
+
+    def risk_amount(self):
+
+        return (
+
+            self.capital *
+
+            self.risk_percent /
+
+            100
+
         )
 
-        capital_required = round(
-            quantity * entry,
-            2
+
+    def position_size(
+
+        self,
+
+        entry,
+
+        stop_loss,
+
+        lot_size=1
+
+    ):
+
+        risk = abs(
+
+            entry -
+
+            stop_loss
+
         )
 
-        trade_quality = "⭐⭐⭐⭐⭐"
+        if risk <= 0:
 
-        return {
-
-            "entry": round(entry, 2),
-
-            "stop_loss": round(stop_loss, 2),
-
-            "target": target,
-
-            "quantity": quantity,
-
-            "risk_amount": round(risk_amount, 2),
-
-            "capital_required": capital_required,
-
-            "trade_quality": trade_quality
-
-        }
-
-    except Exception as e:
-
-        print("Risk Manager Error :", e)
-
-        return None
+            return 0
 
 
-def allow_trade(confidence):
+        qty = (
 
-    if confidence >= 95:
+            self.risk_amount()
 
-        return True
+            /
 
-    return False
+            risk
+
+        )
+
+        qty = math.floor(
+
+            qty /
+
+            lot_size
+
+        ) * lot_size
+
+
+        return max(
+
+            qty,
+
+            lot_size
+
+        )
+
+
+    def risk_reward(
+
+        self,
+
+        entry,
+
+        stop_loss,
+
+        target
+
+    ):
+
+        risk = abs(
+
+            entry -
+
+            stop_loss
+
+        )
+
+        reward = abs(
+
+            target -
+
+            entry
+
+        )
+
+        if risk == 0:
+
+            return 0
+
+        return round(
+
+            reward /
+
+            risk,
+
+            2
+
+        )
+
+
+    def validate_trade(
+
+        self,
+
+        confidence,
+
+        rr
+
+    ):
+
+        if confidence < 85:
+
+            return False, "Confidence below threshold"
+
+        if rr < 2:
+
+            return False, "Risk Reward below 1:2"
+
+        return True, "Trade Approved"
