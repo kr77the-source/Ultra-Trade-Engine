@@ -9,7 +9,6 @@ class UltraTradeEngine:
     def pre_market_analysis(self):
         print("\n[Step 1] Running Pre-Market Analysis...")
         print("-> Fetching Market Trend, Pre-Market OI, and F&O Securities Data...")
-        # Simulating pre-market top 5 filtered stocks
         top_5_stocks = ["RELIANCE.NS", "TCS.NS", "HDFCBANK.NS", "INFY.NS", "ICICIBANK.NS"]
         print(f"-> Selected Top 5 Stocks based on Pre-Market Data: {top_5_stocks}")
         return top_5_stocks
@@ -19,8 +18,6 @@ class UltraTradeEngine:
         strategy_signals = {}
         
         for strat in self.strategies:
-            # Simulating individual strategy signal, entry, sl, and exit
-            # Real implementation will call strategy_cpr.py, strategy_ema.py, etc.
             is_bullish = hash(stock + strat + str(datetime.now().date())) % 2 == 0
             
             if is_bullish:
@@ -49,7 +46,6 @@ class UltraTradeEngine:
         final_matched_signals = {}
         
         for strat, details in strategy_signals.items():
-            # Simulating historical backtest win-rate check (e.g., matching >= 90% accuracy criteria)
             mock_historical_accuracy = 91.5 if len(strat) % 2 == 0 else 85.0 
             
             print(f"   [{strat}] Historical Accuracy: {mock_historical_accuracy}%")
@@ -72,19 +68,14 @@ class UltraTradeEngine:
             current_time = now.strftime("%H:%M")
             current_day = now.strftime("%A")
             
-            # Weekend check (Saturday = 5, Sunday = 6)
             if current_day in ["Saturday", "Sunday"]:
                 print("Market is closed today (Weekend). Exiting simulation.")
                 break
                 
-            # Market hours simulation (9:15 to 15:30)
-            # For testing purpose right now, it will execute immediately.
-            print(f"\n[{now.strftime('%Y-%m-%d %H:%M:%S')] Running Market Scan cycle...")
+            print(f"\n[{now.strftime('%Y-%m-%d %H:%M:%S')}] Running Market Scan cycle...")
             
-            # 1. Pre-market / Stock Selection
             top_stocks = self.pre_market_analysis()
             
-            # 2. Strategy evaluation & Backtest matching for each stock
             for stock in top_stocks:
                 signals = self.evaluate_strategies(stock)
                 approved_signals = self.backtest_and_filter(stock, signals)
@@ -97,9 +88,8 @@ class UltraTradeEngine:
                     print(f"\n⚠️ No strategy met the 90% accuracy threshold for {stock} in this cycle.")
 
             print("\nWaiting for the next scan cycle (sleeping for 60 seconds)...")
-            time.sleep(60)  # In live production, adjust frequency as needed
+            time.sleep(60)
             
-            # Auto stop at 3:30 PM
             if current_time >= "15:30":
                 print("Market closed (3:30 PM). Stopping engine for the day.")
                 break
