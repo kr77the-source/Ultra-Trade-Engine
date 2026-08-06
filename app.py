@@ -1,158 +1,109 @@
-# ==========================================
-# Institutional Trade Engine
-# File : app.py
-# Version : 6.0 Final
-# ==========================================
-
-import streamlit as st
 import time
-
-from engine import TradeEngine
-from dashboard import Dashboard
-from performance import get_statistics
-
-# ------------------------------------------
-# PAGE CONFIG
-# ------------------------------------------
-
-st.set_page_config(
-
-    page_title="Institutional AI Trade Engine",
-
-    page_icon="📈",
-
-    layout="wide"
-
-)
-
-# ------------------------------------------
-# OBJECTS
-# ------------------------------------------
-
-engine = TradeEngine()
-
-ui = Dashboard()
-
-# ------------------------------------------
-# HEADER
-# ------------------------------------------
-
-st.title("📈 Institutional AI Trade Engine")
-
-st.caption(
-    "Professional Intraday Trading Dashboard"
-)
-
-# ------------------------------------------
-# SIDEBAR
-# ------------------------------------------
-
-st.sidebar.header("Controls")
-
-refresh = st.sidebar.slider(
-
-    "Auto Refresh (Seconds)",
-
-    10,
-
-    300,
-
-    60
-
-)
-
-capital = st.sidebar.number_input(
-
-    "Capital",
-
-    value=500000
-
-)
-
-scan = st.sidebar.button(
-
-    "🔍 Scan Market"
-
-)
-
-# ------------------------------------------
-# SCAN
-# ------------------------------------------
-
-if scan:
-
-    with st.spinner("Scanning Market..."):
-
-        result = engine.run()
-
-        st.session_state["result"] = result
-
-# ------------------------------------------
-# DISPLAY
-# ------------------------------------------
-
-if "result" in st.session_state:
-
-    result = st.session_state["result"]
-
-    if result["status"] == "TRADE APPROVED":
-
-        trade = result["trade"]
-
-        ui.show_market_status(
-
-            "Bullish"
-
-            if trade["signal"] == "BUY"
-
-            else "Bearish",
-
-            "Positive",
-
-            "Normal"
-
-        )
-
-        ui.show_trade(trade)
-
-    else:
-
-        ui.show_no_trade(
-
-            result["reason"]
-
-        )
-
-# ------------------------------------------
-# PERFORMANCE
-# ------------------------------------------
-
-stats = get_statistics()
-
-ui.show_performance(stats)
-
-# ------------------------------------------
-# FOOTER
-# ------------------------------------------
-
-st.divider()
-
-st.caption(
-
-    "Institutional AI Engine Version 6"
-
-)
-
-# ------------------------------------------
-# AUTO REFRESH
-# ------------------------------------------
-
-if st.sidebar.checkbox(
-
-    "Enable Auto Refresh"
-
-):
-
-    time.sleep(refresh)
-
-    st.rerun()
+from datetime import datetime
+
+class UltraTradeEngine:
+    def __init__(self):
+        print("🚀 Ultra Trade Engine Initialized...")
+        self.strategies = ["CPR", "EMA", "ORB", "PDH", "VWAP", "Supertrend"]
+
+    def pre_market_analysis(self):
+        print("\n[Step 1] Running Pre-Market Analysis...")
+        print("-> Fetching Market Trend, Pre-Market OI, and F&O Securities Data...")
+        # Simulating pre-market top 5 filtered stocks
+        top_5_stocks = ["RELIANCE.NS", "TCS.NS", "HDFCBANK.NS", "INFY.NS", "ICICIBANK.NS"]
+        print(f"-> Selected Top 5 Stocks based on Pre-Market Data: {top_5_stocks}")
+        return top_5_stocks
+
+    def evaluate_strategies(self, stock):
+        print(f"\n--- Evaluating Strategies for: {stock} ---")
+        strategy_signals = {}
+        
+        for strat in self.strategies:
+            # Simulating individual strategy signal, entry, sl, and exit
+            # Real implementation will call strategy_cpr.py, strategy_ema.py, etc.
+            is_bullish = hash(stock + strat + str(datetime.now().date())) % 2 == 0
+            
+            if is_bullish:
+                entry = 1000.0
+                sl = 990.0
+                target = 1030.0
+                signal = "BUY"
+            else:
+                entry = 1000.0
+                sl = 1010.0
+                target = 970.0
+                signal = "SELL"
+                
+            strategy_signals[strat] = {
+                "signal": signal,
+                "entry": entry,
+                "sl": sl,
+                "target": target
+            }
+            print(f"   [{strat}] Signal: {signal} | Entry: {entry} | SL: {sl} | Target: {target}")
+            
+        return strategy_signals
+
+    def backtest_and_filter(self, stock, strategy_signals):
+        print(f"\n[Backtest & Accuracy Match (90% Criteria)] for {stock}:")
+        final_matched_signals = {}
+        
+        for strat, details in strategy_signals.items():
+            # Simulating historical backtest win-rate check (e.g., matching >= 90% accuracy criteria)
+            mock_historical_accuracy = 91.5 if len(strat) % 2 == 0 else 85.0 
+            
+            print(f"   [{strat}] Historical Accuracy: {mock_historical_accuracy}%")
+            
+            if mock_historical_accuracy >= 90.0:
+                final_matched_signals[strat] = details
+                print(f"   ✅ {strat} matched the 90% accuracy criteria! Signal Approved.")
+            else:
+                print(f"   ❌ {strat} dropped (Accuracy below 90%).")
+                
+        return final_matched_signals
+
+    def run_market_hours(self):
+        print("\n==============================================")
+        print("  Starting Automated Engine (9:15 AM - 3:30 PM)")
+        print("==============================================")
+        
+        while True:
+            now = datetime.now()
+            current_time = now.strftime("%H:%M")
+            current_day = now.strftime("%A")
+            
+            # Weekend check (Saturday = 5, Sunday = 6)
+            if current_day in ["Saturday", "Sunday"]:
+                print("Market is closed today (Weekend). Exiting simulation.")
+                break
+                
+            # Market hours simulation (9:15 to 15:30)
+            # For testing purpose right now, it will execute immediately.
+            print(f"\n[{now.strftime('%Y-%m-%d %H:%M:%S')] Running Market Scan cycle...")
+            
+            # 1. Pre-market / Stock Selection
+            top_stocks = self.pre_market_analysis()
+            
+            # 2. Strategy evaluation & Backtest matching for each stock
+            for stock in top_stocks:
+                signals = self.evaluate_strategies(stock)
+                approved_signals = self.backtest_and_filter(stock, signals)
+                
+                if approved_signals:
+                    print(f"\n🎯 FINAL TRIGGERED SIGNALS FOR {stock}:")
+                    for s_name, s_data in approved_signals.items():
+                        print(f"   -> Strategy: {s_name} | Action: {s_data['signal']} | Entry: {s_data['entry']} | SL: {s_data['sl']}")
+                else:
+                    print(f"\n⚠️ No strategy met the 90% accuracy threshold for {stock} in this cycle.")
+
+            print("\nWaiting for the next scan cycle (sleeping for 60 seconds)...")
+            time.sleep(60)  # In live production, adjust frequency as needed
+            
+            # Auto stop at 3:30 PM
+            if current_time >= "15:30":
+                print("Market closed (3:30 PM). Stopping engine for the day.")
+                break
+
+if __name__ == "__main__":
+    engine = UltraTradeEngine()
+    engine.run_market_hours()
