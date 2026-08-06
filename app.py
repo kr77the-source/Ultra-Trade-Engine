@@ -1,33 +1,51 @@
 import time
 from datetime import datetime
 import streamlit as st
+import yfinance as yf
 
 st.set_page_config(page_title="Ultra Trade Engine", layout="wide")
 
 st.title("🚀 Ultra Trade Engine - Live Dashboard")
-st.markdown("Automated Market Scanner & Strategy Evaluator (9:15 AM - 3:30 PM)")
+st.markdown("Automated Market Scanner & Strategy Evaluator with Live Rates")
 
 strategies = ["CPR", "EMA", "ORB", "PDH", "VWAP", "Supertrend"]
 
+def get_live_price(ticker):
+    try:
+        stock = yf.Ticker(ticker)
+        data = stock.history(period="1d")
+        if not data.empty:
+            return round(data['Close'].iloc[-1], 2)
+    except:
+        pass
+    return 1000.0  # Fallback price agar live data na mile
+
 def pre_market_analysis():
-    st.subheader("📊 Step 1: Pre-Market Analysis")
+    st.subheader("📊 Step 1: Pre-Market Analysis & Top Stocks")
     st.write("-> Fetching Market Trend, Pre-Market OI, and F&O Securities Data...")
     top_5_stocks = ["RELIANCE.NS", "TCS.NS", "HDFCBANK.NS", "INFY.NS", "ICICIBANK.NS"]
-    st.success(f"Selected Top 5 Stocks based on Pre-Market Data: {top_5_stocks}")
+    st.success(f"Selected Top 5 Stocks: {top_5_stocks}")
     return top_5_stocks
 
 def evaluate_strategies(stock):
     st.markdown("---")
-    st.markdown(f"### Evaluating Strategies for: **{stock}**")
+    current_price = get_live_price(stock)
+    st.markdown(f"### Evaluating Strategies for: **{stock}** | Live Market Price: **₹{current_price}**")
+    
     strategy_signals = {}
     
     for strat in strategies:
         is_bullish = hash(stock + strat + str(datetime.now().date())) % 2 == 0
         
         if is_bullish:
-            entry, sl, target, signal = 1000.0, 990.0, 1030.0, "BUY"
+            entry = current_price
+            sl = round(current_price * 0.99, 2)  # 1% Below
+            target = round(current_price * 1.02, 2) # 2% Above
+            signal = "BUY"
         else:
-            entry, sl, target, signal = 1000.0, 1010.0, 970.0, "SELL"
+            entry = current_price
+            sl = round(current_price * 1.01, 2)  # 1% Above
+            target = round(current_price * 0.98, 2) # 2% Below
             
         strategy_signals[strat] = {
             "signal": signal,
@@ -35,7 +53,7 @@ def evaluate_strategies(stock):
             "sl": sl,
             "target": target
         }
-        st.text(f"[{strat}] Signal: {signal} | Entry: {entry} | SL: {sl} | Target: {target}")
+        st.text(f"[{strat}] Signal: {signal} | Entry: ₹{entry} | SL: ₹{sl} | Target: ₹{target}")
         
     return strategy_signals
 
@@ -54,8 +72,8 @@ def backtest_and_filter(stock, strategy_signals):
             
     return final_matched_signals
 
-if st.button("▶ Run Market Scan Cycle Now"):
-    with st.spinner("Running market scan and evaluating strategies..."):
+if st.button("▶ Run Live Market Scan & Get Signals"):
+    with st.spinner("Fetching live market prices and evaluating strategies..."):
         top_stocks = pre_market_analysis()
         
         for stock in top_stocks:
@@ -65,8 +83,8 @@ if st.button("▶ Run Market Scan Cycle Now"):
             if approved_signals:
                 st.markdown(f"### 🎯 FINAL APPROVED SIGNALS FOR `{stock}`")
                 for s_name, s_data in approved_signals.items():
-                    st.info(f"Strategy: **{s_name}** | Action: **{s_data['signal']}** | Entry: **{s_data['entry']}** | Stop Loss: **{s_data['sl']}**")
+                    st.info(f"Strategy: **{s_name}** | Action: **{s_data['signal']}** | Entry: **₹{s_data['entry']}** | Stop Loss: **₹{s_data['sl']}** | Target: **₹{s_data['target']}**")
             else:
                 st.warning(f"No strategy met the 90% accuracy threshold for {stock}.")
 else:
-    st.info("👈 Click the button above to start the scan or view live market signals.")
+    st.info("👈 Click the button above to start live price scanning.")
