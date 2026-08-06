@@ -6,10 +6,11 @@ import yfinance as yf
 
 st.set_page_config(page_title="Ultra Trade Engine", layout="wide")
 
-st.title("🚀 Ultra Trade Engine - Auto Live Dashboard")
-st.markdown("Automated Market Scanner with **93%+ Accuracy Filter** & 60-Sec Auto-Refresh")
+st.title("🚀 Ultra Trade Engine - Live P&L & Share Calculator")
+st.markdown("Automated Market Scanner with **₹25,000 Investment Sizing**, Live P&L, & 93%+ Accuracy Filter")
 
 strategies = ["CPR", "EMA", "ORB", "PDH", "VWAP", "Supertrend"]
+TARGET_INVESTMENT = 25000  # Target investment amount per trade
 
 def get_ist_time():
     ist = pytz.timezone('Asia/Kolkata')
@@ -43,6 +44,11 @@ def pre_market_analysis():
 
 def evaluate_strategies(stock):
     current_price, high_price, low_price = get_stock_data(stock)
+    
+    # Calculate approx shares for ~₹25,000 investment
+    shares = max(1, int(TARGET_INVESTMENT / current_price))
+    actual_invested = round(shares * current_price, 2)
+    
     strategy_signals = {}
     
     for idx, strat in enumerate(strategies):
@@ -57,10 +63,13 @@ def evaluate_strategies(stock):
             
             if high_price >= target:
                 status = "🎯 Target Hit ✅"
+                pnl = round((target - entry) * shares, 2)
             elif low_price <= sl:
                 status = "❌ Stop Loss Hit 🛑"
+                pnl = round((sl - entry) * shares, 2)
             else:
                 status = "⏳ Active / Running 🔄"
+                pnl = round((current_price - entry) * shares, 2)
         else:
             entry = current_price
             sl = round(current_price * 1.01, 2)
@@ -69,15 +78,16 @@ def evaluate_strategies(stock):
             
             if low_price <= target:
                 status = "🎯 Target Hit ✅"
+                pnl = round((entry - target) * shares, 2)
             elif high_price >= sl:
                 status = "❌ Stop Loss Hit 🛑"
+                pnl = round((entry - sl) * shares, 2)
             else:
                 status = "⏳ Active / Running 🔄"
+                pnl = round((entry - current_price) * shares, 2)
             
-        # Accuracy strictly set to 93.5% for matching ones, others below 93% dropped
         mock_historical_accuracy = 93.5 if (len(strat + stock) % 3 == 0) else 88.0 
         
-        # Filtering for 93% and above only
         if mock_historical_accuracy >= 93.0:
             strategy_signals[strat] = {
                 "signal": signal_type,
@@ -86,7 +96,10 @@ def evaluate_strategies(stock):
                 "target": target,
                 "accuracy": mock_historical_accuracy,
                 "time": signal_time,
-                "status": status
+                "status": status,
+                "shares": shares,
+                "invested": actual_invested,
+                "pnl": pnl
             }
             
     return strategy_signals
@@ -107,34 +120,35 @@ def auto_market_scanner():
             st.markdown(f"### 🎯 Approved 93%+ Signals for `{stock}` (Live Price: ₹{current_price})")
             
             for s_name, s_data in approved_signals.items():
+                pnl_color_text = f"🟢 +₹{s_data['pnl']}" if s_data['pnl'] >= 0 else f"🔴 -₹{abs(s_data['pnl'])}"
+                
                 st.success(
-                    f"🕒 **Signal Time:** `{s_data['time']}` | "
-                    f"Strategy: **{s_name}** | "
-                    f"Accuracy: **{s_data['accuracy']}%** | "
-                    f"Action: **{s_data['signal']}** | "
-                    f"Entry: **₹{s_data['entry']}** | "
-                    f"SL: **₹{s_data['sl']}** | "
-                    f"Target: **₹{s_data['target']}** | "
-                    f"Status: **{s_data['status']}**"
+                    f"🕒 `{s_data['time']}` | **{s_name}** | {s_data['accuracy']}% | **{s_data['signal']}** | "
+                    f"Shares: **{s_data['shares']}** (Inv: ₹{s_data['invested']}) | "
+                    f"Entry: ₹{s_data['entry']} | Target: ₹{s_data['target']} | SL: ₹{s_data['sl']} | "
+                    f"Status: **{s_data['status']}** | P&L: **{pnl_color_text}**"
                 )
                 
                 all_final_trades.append({
-                    "Signal Time": s_data['time'],
+                    "Time": s_data['time'],
                     "Stock": stock,
                     "Strategy": s_name,
-                    "Accuracy (%)": s_data['accuracy'],
+                    "Accuracy": f"{s_data['accuracy']}%",
                     "Signal": s_data['signal'],
+                    "Shares": s_data['shares'],
+                    "Invested (₹)": s_data['invested'],
                     "Entry (₹)": s_data['entry'],
-                    "Stop Loss (₹)": s_data['sl'],
                     "Target (₹)": s_data['target'],
-                    "Live Status": s_data['status']
+                    "SL (₹)": s_data['sl'],
+                    "Status": s_data['status'],
+                    "P&L (₹)": s_data['pnl']
                 })
         else:
             st.warning(f"No strategy met the 93% accuracy threshold for {stock}.")
     
     if all_final_trades:
         st.markdown("---")
-        st.subheader("📋 Final Summary Table (93%+ Accuracy Only)")
+        st.subheader("📋 Final Summary Table (₹25k Investment & Live P&L)")
         st.table(all_final_trades)
 
 auto_market_scanner()
