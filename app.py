@@ -18,7 +18,7 @@ def get_live_price(ticker):
             return round(data['Close'].iloc[-1], 2)
     except:
         pass
-    return 1000.0  # Fallback price agar live data na mile
+    return 1000.0
 
 def pre_market_analysis():
     st.subheader("📊 Step 1: Pre-Market Analysis & Top Stocks")
@@ -39,21 +39,22 @@ def evaluate_strategies(stock):
         
         if is_bullish:
             entry = current_price
-            sl = round(current_price * 0.99, 2)  # 1% Below
-            target = round(current_price * 1.02, 2) # 2% Above
-            signal = "BUY"
+            sl = round(current_price * 0.99, 2)
+            target = round(current_price * 1.02, 2)
+            signal_type = "BUY"
         else:
             entry = current_price
-            sl = round(current_price * 1.01, 2)  # 1% Above
-            target = round(current_price * 0.98, 2) # 2% Below
+            sl = round(current_price * 1.01, 2)
+            target = round(current_price * 0.98, 2)
+            signal_type = "SELL"
             
         strategy_signals[strat] = {
-            "signal": signal,
+            "signal": signal_type,
             "entry": entry,
             "sl": sl,
             "target": target
         }
-        st.text(f"[{strat}] Signal: {signal} | Entry: ₹{entry} | SL: ₹{sl} | Target: ₹{target}")
+        st.text(f"[{strat}] Signal: {signal_type} | Entry: ₹{entry} | SL: ₹{sl} | Target: ₹{target}")
         
     return strategy_signals
 
@@ -75,6 +76,7 @@ def backtest_and_filter(stock, strategy_signals):
 if st.button("▶ Run Live Market Scan & Get Signals"):
     with st.spinner("Fetching live market prices and evaluating strategies..."):
         top_stocks = pre_market_analysis()
+        all_final_trades = []
         
         for stock in top_stocks:
             signals = evaluate_strategies(stock)
@@ -84,7 +86,20 @@ if st.button("▶ Run Live Market Scan & Get Signals"):
                 st.markdown(f"### 🎯 FINAL APPROVED SIGNALS FOR `{stock}`")
                 for s_name, s_data in approved_signals.items():
                     st.info(f"Strategy: **{s_name}** | Action: **{s_data['signal']}** | Entry: **₹{s_data['entry']}** | Stop Loss: **₹{s_data['sl']}** | Target: **₹{s_data['target']}**")
+                    all_final_trades.append({
+                        "Stock": stock,
+                        "Strategy": s_name,
+                        "Signal": s_data['signal'],
+                        "Entry (₹)": s_data['entry'],
+                        "Stop Loss (₹)": s_data['sl'],
+                        "Target (₹)": s_data['target']
+                    })
             else:
                 st.warning(f"No strategy met the 90% accuracy threshold for {stock}.")
+        
+        if all_final_trades:
+            st.markdown("---")
+            st.subheader("📋 Final Summary Table (All Approved Strategy Signals)")
+            st.table(all_final_trades)
 else:
     st.info("👈 Click the button above to start live price scanning.")
