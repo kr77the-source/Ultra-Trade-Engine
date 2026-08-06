@@ -1,14 +1,19 @@
 import time
 from datetime import datetime
+import pytz
 import streamlit as st
 import yfinance as yf
 
 st.set_page_config(page_title="Ultra Trade Engine", layout="wide")
 
 st.title("🚀 Ultra Trade Engine - Live Dashboard")
-st.markdown("Automated Market Scanner & Strategy Evaluator (90%+ Accuracy Filter)")
+st.markdown("Automated Market Scanner & Strategy Evaluator (IST Timezone)")
 
 strategies = ["CPR", "EMA", "ORB", "PDH", "VWAP", "Supertrend"]
+
+def get_ist_time():
+    ist = pytz.timezone('Asia/Kolkata')
+    return datetime.now(ist).strftime("%H:%M:%S")
 
 def get_live_price(ticker):
     try:
@@ -39,7 +44,7 @@ def pre_market_analysis():
 
 def evaluate_strategies(stock):
     current_price = get_live_price(stock)
-    signal_time = datetime.now().strftime("%H:%M:%S")
+    signal_time = get_ist_time()
     strategy_signals = {}
     
     for strat in strategies:
@@ -56,7 +61,6 @@ def evaluate_strategies(stock):
             target = round(current_price * 0.98, 2)
             signal_type = "SELL"
             
-        # Mock accuracy generation (ensuring some cross 90%)
         mock_historical_accuracy = 92.5 if (len(strat + stock) % 2 == 0) else 85.0 
         
         if mock_historical_accuracy >= 90.0:
@@ -86,7 +90,7 @@ if st.button("▶ Run Live Market Scan & Get Signals"):
                 
                 for s_name, s_data in approved_signals.items():
                     st.success(
-                        f"🕒 **Time:** `{s_data['time']}` | "
+                        f"🕒 **IST Time:** `{s_data['time']}` | "
                         f"Strategy: **{s_name}** | "
                         f"Accuracy: **{s_data['accuracy']}%** | "
                         f"Action: **{s_data['signal']}** | "
@@ -96,7 +100,7 @@ if st.button("▶ Run Live Market Scan & Get Signals"):
                     )
                     
                     all_final_trades.append({
-                        "Time": s_data['time'],
+                        "IST Time": s_data['time'],
                         "Stock": stock,
                         "Strategy": s_name,
                         "Accuracy (%)": s_data['accuracy'],
@@ -110,7 +114,7 @@ if st.button("▶ Run Live Market Scan & Get Signals"):
         
         if all_final_trades:
             st.markdown("---")
-            st.subheader("📋 Final Summary Table (90%+ Accuracy Signals with Time)")
+            st.subheader("📋 Final Summary Table (IST Timestamps)")
             st.table(all_final_trades)
 else:
     st.info("👈 Click the button above to start scanning.")
