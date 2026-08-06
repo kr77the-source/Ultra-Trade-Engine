@@ -17,8 +17,8 @@ def pre_market_analysis():
     return top_5_stocks
 
 def evaluate_strategies(stock):
-    st.markdown(f"--- 
- ### Evaluating Strategies for: **{stock}**")
+    st.markdown("---")
+    st.markdown(f"### Evaluating Strategies for: **{stock}**")
     strategy_signals = {}
     
     for strat in strategies:
@@ -54,7 +54,6 @@ def backtest_and_filter(stock, strategy_signals):
             
     return final_matched_signals
 
-# Main dashboard layout execution
 if st.button("▶ Run Market Scan Cycle Now"):
     with st.spinner("Running market scan and evaluating strategies..."):
         top_stocks = pre_market_analysis()
