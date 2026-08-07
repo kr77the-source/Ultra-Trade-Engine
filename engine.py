@@ -1,18 +1,17 @@
 # ==========================================
 # Institutional Trade Engine
-# File : engine.py
+# File : engine.py (With Trade Signals)
 # ==========================================
 
 from live_data import LiveDataManager
 import config
+import numpy as np
 
 class TradingEngine:
     def __init__(self):
         self.data_manager = LiveDataManager()
-        print(f"Engine Initialized. Mode -> LIVE_MODE: {config.LIVE_MODE}")
 
     def get_market_data(self):
-        """Fetches latest price and historical candles using LiveDataManager."""
         latest_price = self.data_manager.get_latest_price()
         historical_df = self.data_manager.get_historical_data(
             interval=config.DEFAULT_INTERVAL,
@@ -21,8 +20,23 @@ class TradingEngine:
         return latest_price, historical_df
 
     def run_cycle(self):
-        """Main execution cycle for analysis and trade setup."""
         price, df = self.get_market_data()
-        print(f"[{config.DEFAULT_SYMBOL}] Current Price: {price}")
-        # Add your indicator calculations and strategy scoring logic here
-        return price, df
+        
+        # Dummy / Strategy Scoring Logic (Yahan aap apne indicators ki logic jod sakte hain)
+        np.random.seed(int(price) % 100)
+        confidence_score = np.random.randint(60, 95)
+        
+        signal = "WAIT / NO TRADE"
+        if confidence_score >= config.MIN_CONFIDENCE:
+            signal = "BUY CALL (CE)" if np.random.rand() > 0.5 else "BUY PUT (PE)"
+        
+        trade_setup = {
+            "Price": price,
+            "Signal": signal,
+            "Confidence": f"{confidence_score}%",
+            "StopLoss": round(price - 50, 2),
+            "Target1": round(price + 100, 2),
+            "Target2": round(price + 150, 2)
+        }
+        
+        return trade_setup, df
