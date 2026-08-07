@@ -1,130 +1,28 @@
 # ==========================================
 # Institutional Trade Engine
 # File : engine.py
-# Version : 6.0
 # ==========================================
 
-import scanner
-from validator import TradeValidator
-from portfolio_manager import PortfolioManager
-from paper_trading import PaperTrader
+from live_data import LiveDataManager
+import config
 
-
-class TradeEngine:
-
+class TradingEngine:
     def __init__(self):
+        self.data_manager = LiveDataManager()
+        print(f"Engine Initialized. Mode -> LIVE_MODE: {config.LIVE_MODE}")
 
-        self.validator = TradeValidator()
-
-        self.portfolio = PortfolioManager()
-
-        self.paper = PaperTrader()
-
-
-    def run(self):
-
-        trade = scanner.get_best_trade()
-
-        if trade is None:
-
-            return {
-
-                "status": "NO TRADE",
-
-                "reason": "Scanner returned no setup"
-
-            }
-
-
-        validation = self.validator.validate({
-
-            "signal": trade["signal"],
-
-            "confidence": trade["confidence"],
-
-            "pdh": trade["modules"]["pdh"],
-
-            "smart_money": trade["modules"]["smart_money"],
-
-            "order_block": trade["modules"]["order_block"],
-
-            "liquidity": trade["modules"]["liquidity"],
-
-            "multi_timeframe": trade["modules"]["multi_timeframe"],
-
-            "option_chain": trade["modules"]["option_chain"],
-
-            "global": trade["modules"]["global"],
-
-            "volume_ok": trade["modules"]["volume_ok"],
-
-            "risk_reward": trade["setup"]["risk_reward"]
-
-        })
-
-
-        if not validation["approved"]:
-
-            return validation
-
-
-        approved, reason = self.portfolio.can_take_trade(
-
-            trade["symbol"],
-
-            trade["setup"]["entry"]
-
+    def get_market_data(self):
+        """Fetches latest price and historical candles using LiveDataManager."""
+        latest_price = self.data_manager.get_latest_price()
+        historical_df = self.data_manager.get_historical_data(
+            interval=config.DEFAULT_INTERVAL,
+            period=config.DEFAULT_PERIOD
         )
+        return latest_price, historical_df
 
-
-        if not approved:
-
-            return {
-
-                "status": "NO TRADE",
-
-                "reason": reason
-
-            }
-
-
-        setup = trade["setup"]
-
-
-        self.paper.create_trade(
-
-            trade["symbol"],
-
-            trade["signal"],
-
-            setup["entry"],
-
-            setup["stop_loss"],
-
-            setup["target_1"],
-
-            setup["target_2"],
-
-            setup["quantity"],
-
-            trade["confidence"]
-
-        )
-
-
-        self.portfolio.add_trade(
-
-            trade["symbol"],
-
-            setup["entry"]
-
-        )
-
-
-        return {
-
-            "status": "TRADE APPROVED",
-
-            "trade": trade
-
-        }
+    def run_cycle(self):
+        """Main execution cycle for analysis and trade setup."""
+        price, df = self.get_market_data()
+        print(f"[{config.DEFAULT_SYMBOL}] Current Price: {price}")
+        # Add your indicator calculations and strategy scoring logic here
+        return price, df
