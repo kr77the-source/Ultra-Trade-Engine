@@ -1,158 +1,27 @@
-import random
+# ==========================================
+# Institutional Trade Engine
+# File : app.py
+# ==========================================
+
 import time
-from datetime import datetime, timedelta
-import pytz
-import streamlit as st
-import yfinance as yf
+import config
+from engine import TradingEngine
 
-st.set_page_config(page_title="Ultra Trade Engine", layout="wide")
+def main():
+    print("=" * 50)
+    print(f"Starting {config.APP_NAME} v{config.VERSION}")
+    print(f"Target Symbol : {config.DEFAULT_SYMBOL}")
+    print(f"Live Trading  : {config.LIVE_MODE}")
+    print("=" * 50)
 
-st.title("🚀 Ultra Trade Engine - Live P&L & Share Calculator")
-st.markdown("Automated Market Scanner with **Live Fluctuating P&L**, ₹25k Investment & 93%+ Accuracy")
+    engine = TradingEngine()
 
-strategies = ["CPR", "EMA", "ORB", "PDH", "VWAP", "Supertrend"]
-TARGET_INVESTMENT = 25000
-
-def get_ist_time():
-    ist = pytz.timezone('Asia/Kolkata')
-    return datetime.now(ist).strftime("%H:%M:%S")
-
-def get_unique_signal_time(index):
-    ist = pytz.timezone('Asia/Kolkata')
-    offset_minutes = (index + 1) * 7 
-    signal_dt = datetime.now(ist) - timedelta(minutes=offset_minutes)
-    return signal_dt.strftime("%H:%M:%S")
-
-def get_stock_data(ticker):
     try:
-        stock = yf.Ticker(ticker)
-        data = stock.history(period="1d")
-        if not data.empty and 'Close' in data.columns:
-            current = float(data['Close'].iloc[-1])
-            high = float(data['High'].iloc[-1])
-            low = float(data['Low'].iloc[-1])
-            return round(current, 2), round(high, 2), round(low, 2)
-    except:
-        pass
-    return 1500.00, 1520.00, 1480.00
+        while True:
+            engine.run_cycle()
+            time.sleep(config.AUTO_REFRESH_SECONDS)
+    except KeyboardInterrupt:
+        print("\nTrade Engine stopped safely by user.")
 
-def pre_market_analysis():
-    st.subheader("📊 Step 1: Pre-Market Analysis & Top Stocks")
-    st.write("-> Fetching Market Trend, Pre-Market OI, and F&O Securities Data...")
-    top_5_stocks = ["RELIANCE.NS", "TCS.NS", "HDFCBANK.NS", "INFY.NS", "ICICIBANK.NS"]
-    st.success(f"Selected Top 5 Stocks: {top_5_stocks}")
-    return top_5_stocks
-
-def evaluate_strategies(stock):
-    current_price, high_price, low_price = get_stock_data(stock)
-    
-    shares = max(1, int(TARGET_INVESTMENT / current_price))
-    actual_invested = round(shares * current_price, 2)
-    
-    strategy_signals = {}
-    
-    for idx, strat in enumerate(strategies):
-        is_bullish = hash(stock + strat + str(datetime.now().date())) % 2 == 0
-        signal_time = get_unique_signal_time(idx)
-        
-        if is_bullish:
-            entry = current_price
-            sl = round(current_price * 0.99, 2)
-            target = round(current_price * 1.02, 2)
-            signal_type = "BUY"
-            
-            if high_price >= target:
-                status = "🎯 Target Hit ✅"
-                pnl = round((target - entry) * shares, 2)
-            elif low_price <= sl:
-                status = "❌ Stop Loss Hit 🛑"
-                pnl = round((sl - entry) * shares, 2)
-            else:
-                status = "⏳ Active / Running 🔄"
-                # Adding a dynamic live fluctuation based on second/hash so P&L is visible
-                fluctuation = (hash(stock + strat + str(datetime.now().second // 10)) % 30) - 10
-                pnl = round(((current_price * 0.005) * shares) if fluctuation >= 0 else (- (current_price * 0.003) * shares), 2)
-        else:
-            entry = current_price
-            sl = round(current_price * 1.01, 2)
-            target = round(current_price * 0.98, 2)
-            signal_type = "SELL"
-            
-            if low_price <= target:
-                status = "🎯 Target Hit ✅"
-                pnl = round((entry - target) * shares, 2)
-            elif high_price >= sl:
-                status = "❌ Stop Loss Hit 🛑"
-                pnl = round((entry - sl) * shares, 2)
-            else:
-                status = "⏳ Active / Running 🔄"
-                fluctuation = (hash(stock + strat + str(datetime.now().second // 10)) % 30) - 10
-                pnl = round(((current_price * 0.004) * shares) if fluctuation >= 0 else (- (current_price * 0.002) * shares), 2)
-            
-        mock_historical_accuracy = 93.5 if (len(strat + stock) % 3 == 0) else 88.0 
-        
-        if mock_historical_accuracy >= 93.0:
-            strategy_signals[strat] = {
-                "signal": signal_type,
-                "entry": entry,
-                "sl": sl,
-                "target": target,
-                "accuracy": mock_historical_accuracy,
-                "time": signal_time,
-                "status": status,
-                "shares": shares,
-                "invested": actual_invested,
-                "pnl": pnl
-            }
-            
-    return strategy_signals
-
-@st.fragment(run_every=60)
-def auto_market_scanner():
-    st.info(f"🔄 Auto-scanning live market... Last updated at: **{get_ist_time()} IST** (Refreshes every 60s)")
-    
-    top_stocks = pre_market_analysis()
-    all_final_trades = []
-    
-    for stock in top_stocks:
-        current_price, _, _ = get_stock_data(stock)
-        approved_signals = evaluate_strategies(stock)
-        
-        if approved_signals:
-            st.markdown("---")
-            st.markdown(f"### 🎯 Approved 93%+ Signals for `{stock}` (Live Price: ₹{current_price})")
-            
-            for s_name, s_data in approved_signals.items():
-                pnl_val = s_data['pnl']
-                pnl_color_text = f"🟢 +₹{pnl_val}" if pnl_val >= 0 else f"🔴 -₹{abs(pnl_val)}"
-                
-                st.success(
-                    f"🕒 `{s_data['time']}` | **{s_name}** | {s_data['accuracy']}% | **{s_data['signal']}** | "
-                    f"Shares: **{s_data['shares']}** (Inv: ₹{s_data['invested']}) | "
-                    f"Entry: ₹{s_data['entry']} | Target: ₹{s_data['target']} | SL: ₹{s_data['sl']} | "
-                    f"Status: **{s_data['status']}** | P&L: **{pnl_color_text}**"
-                )
-                
-                all_final_trades.append({
-                    "Time": s_data['time'],
-                    "Stock": stock,
-                    "Strategy": s_name,
-                    "Accuracy": f"{s_data['accuracy']}%",
-                    "Signal": s_data['signal'],
-                    "Shares": s_data['shares'],
-                    "Invested (₹)": s_data['invested'],
-                    "Entry (₹)": s_data['entry'],
-                    "Target (₹)": s_data['target'],
-                    "SL (₹)": s_data['sl'],
-                    "Status": s_data['status'],
-                    "P&L (₹)": pnl_val
-                })
-        else:
-            st.warning(f"No strategy met the 93% accuracy threshold for {stock}.")
-    
-    if all_final_trades:
-        st.markdown("---")
-        st.subheader("📋 Final Summary Table (Live P&L Tracking)")
-        st.table(all_final_trades)
-
-auto_market_scanner()
+if __name__ == "__main__":
+    main()
