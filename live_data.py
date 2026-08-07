@@ -1,7 +1,7 @@
 # ==========================================
 # Institutional Trade Engine
 # File : live_data.py
-# Version : 2.0 (Live & Mock Integrated)
+# Version : 2.1 (Fixed Pandas Frequency)
 # ==========================================
 
 import pandas as pd
@@ -18,15 +18,12 @@ class LiveDataManager:
         """Fetches real-time price if LIVE_MODE is True, otherwise returns mock price."""
         if self.live_mode:
             try:
-                # TODO: Implement actual broker WebSocket/REST call here (e.g., Zerodha KiteConnect)
-                # Example:
-                # price = kite.ltp(self.symbol)[self.symbol]['last_price']
-                # return price
+                # TODO: Implement actual broker WebSocket/REST call here
                 pass
             except Exception as e:
                 print(f"Live feed error: {e}. Falling back to mock data.")
         
-        # Mock / Dummy price generation for testing or offline mode
+        # Mock / Dummy price generation
         base_price = 22000.00
         noise = np.random.uniform(-5, 5)
         return round(base_price + noise, 2)
@@ -40,8 +37,19 @@ class LiveDataManager:
             except Exception as e:
                 print(f"Live historical data error: {e}. Using mock data.")
 
+        # Map config intervals to valid Pandas frequency strings
+        freq_map = {
+            "1m": "1min",
+            "5m": "5min",
+            "15m": "15min",
+            "30m": "30min",
+            "1h": "1h",
+            "1D": "1D"
+        }
+        pd_freq = freq_map.get(interval, "15min")
+
         # Fallback / Mock OHLCV DataFrame generator
-        dates = pd.date_range(end=datetime.now(), periods=100, freq=interval)
+        dates = pd.date_range(end=datetime.now(), periods=100, freq=pd_freq)
         np.random.seed(42)
         close = 22000 + np.cumsum(np.random.randn(100) * 20)
         high = close + np.random.uniform(2, 10, size=100)
